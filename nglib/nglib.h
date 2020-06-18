@@ -62,6 +62,7 @@ typedef void * Ng_STL_Geometry;
 /// Data type for NETGEN OpenCascade geometry
 typedef void * Ng_OCC_Geometry;
 typedef void * Ng_OCC_TopTools_IndexedMapOfShape;
+typedef void * Ng_TopoDS_Shape;
 #endif
 
 
@@ -244,6 +245,13 @@ NGLIB_API void Ng_DeleteMesh (Ng_Mesh * mesh);
                     be saved
 */
 NGLIB_API void Ng_SaveMesh(Ng_Mesh * mesh, const char* filename);
+
+DLL_HEADER void Cenos_ExportMeshToGmesh2(Ng_Mesh* mesh, const char* filename);
+
+DLL_HEADER void Cenos_GenerateBoundaryLayer(Ng_Mesh* mesh,
+    int* surfid_arr, int surfid_count,
+    double* heights_arr, int heights_count,
+    size_t* new_matnrs_arr, int new_matnrs_count);
 
 
 /*! \brief Load a Netgen VOL Mesh from disk into memory
@@ -670,6 +678,9 @@ NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_IGES (const char * filename);
 
 // Loads geometry from BREP file
 NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP (const char * filename);
+
+//CENOS
+DLL_HEADER Ng_OCC_Geometry * Cenos_OCC_ShapeToGeometry(Ng_TopoDS_Shape* shape);
 
 // Set the local mesh size based on geometry / topology
 NGLIB_API Ng_Result Ng_OCC_SetLocalMeshSize (Ng_OCC_Geometry * geom,

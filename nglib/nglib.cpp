@@ -1260,3 +1260,32 @@ void MyDummyToForceLinkingLibInterface(Mesh &mesh, NetgenGeometry &geom)
   netgen::WriteUserFormat("", mesh, /* geom, */ "");
 }
 
+namespace nglib
+{
+    DLL_HEADER void Cenos_ExportMeshToGmesh2(Ng_Mesh* mesh, const char* filename)
+    {
+        //Mesh* m = (Mesh*)mesh;
+        netgen::WriteUserFormat(string("Gmsh2 Format"), *(Mesh*)mesh, /* geom, */ string(filename));
+    }
+
+    DLL_HEADER void Cenos_GenerateBoundaryLayer(Ng_Mesh* mesh,
+        int* surfid_arr, int surfid_count, 
+        double* heights_arr, int heights_count,
+        size_t* new_matnrs_arr, int new_matnrs_count
+        )
+    {
+        BoundaryLayerParameters blp;
+        for (int i = 0; i < surfid_count; i++) { blp.surfid.Append(surfid_arr[i]); }
+        for (int i = 0; i < heights_count; i++) { blp.heights.Append(heights_arr[i]); }
+        for (int i = 0; i < new_matnrs_count; i++) { blp.new_matnrs.Append(new_matnrs_arr[i]); }
+        netgen::GenerateBoundaryLayer(*(Mesh*)mesh, blp);
+    }
+
+    DLL_HEADER Ng_OCC_Geometry* Cenos_OCC_ShapeToGeometry(Ng_TopoDS_Shape * s)
+    {
+        OCCGeometry* geom = netgen::CreateOCCGeometryFromTopoDS((Cenos_TopoDS_Shape*)s);
+        return (Ng_OCC_Geometry*)geom;
+    }
+}
+
+
