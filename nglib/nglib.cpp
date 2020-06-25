@@ -1265,7 +1265,8 @@ namespace nglib
     DLL_HEADER void Cenos_ExportMeshToGmesh2(Ng_Mesh* mesh, const char* filename)
     {
         //Mesh* m = (Mesh*)mesh;
-        netgen::WriteUserFormat(string("Gmsh2 Format"), *(Mesh*)mesh, /* geom, */ string(filename));
+        netgen::Cenos_WriteGmsh2Format(*(Mesh*)mesh, string(filename));
+        //netgen::WriteUserFormat(string("Cenos Gmsh2 Format"), *(Mesh*)mesh, /* geom, */ string(filename));
     }
 
     DLL_HEADER void Cenos_GenerateBoundaryLayer(Ng_Mesh* mesh,
@@ -1286,6 +1287,37 @@ namespace nglib
         OCCGeometry* geom = netgen::CreateOCCGeometryFromTopoDS((Cenos_TopoDS_Shape*)s);
         return (Ng_OCC_Geometry*)geom;
     }
+
+    DLL_HEADER Ng_Result Cenos_OCC_GetSoMap(Ng_OCC_Geometry* geom,
+        Ng_OCC_TopTools_IndexedMapOfShape* SoMap)
+    {
+        OCCGeometry* occgeom = (OCCGeometry*)geom;
+        TopTools_IndexedMapOfShape* occsomap = (TopTools_IndexedMapOfShape*)SoMap;
+
+        // Copy the face map from the geometry to the given variable
+        occsomap->Assign(occgeom->somap);
+
+        if (occsomap->Extent())
+        {
+            return NG_OK;
+        }
+        else
+        {
+            return NG_ERROR;
+        }
+    }
+
+    DLL_HEADER int Cenos_GetSurfaceElementIndex(Ng_Mesh* mesh, int num)
+    {
+        return ((Mesh*)mesh)->SurfaceElement(num).GetIndex();
+    }
+    
+
+    DLL_HEADER int Cenos_GetVolumeElementIndex(Ng_Mesh* mesh, int num)
+    {
+        return ((Mesh*)mesh)->VolumeElement(num).GetIndex();
+    }
+
 }
 
 

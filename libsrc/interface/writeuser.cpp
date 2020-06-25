@@ -65,6 +65,7 @@ bool WriteUserFormat (const string & format,
   // const CSGeometry & geom = *dynamic_cast<const CSGeometry*> (&hgeom);
   const CSGeometry & geom = *dynamic_pointer_cast<CSGeometry> (mesh.GetGeometry());  
 
+
   PrintMessage (1, "Export mesh to file ", filename,
 		", format is ", format);
 
@@ -128,6 +129,9 @@ bool WriteUserFormat (const string & format,
   // Added Gmsh v2.xx Mesh export capability
   else if (format == "Gmsh2 Format")
     WriteGmsh2Format (mesh, geom, filename);
+
+  else if (format == "Cenos Gmsh2 Format")
+    Cenos_WriteGmsh2Format (mesh, filename);
 
   // Philippose - 25/10/2009
   // Added OpenFOAM 1.5+ Mesh export capability

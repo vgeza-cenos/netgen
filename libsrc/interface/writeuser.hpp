@@ -6,7 +6,6 @@
 /* Authors: many                                                          */
 /* Date:    10. Dec. 97                                                   */
 /**************************************************************************/
-
 namespace netgen {
 
 DLL_HEADER extern
@@ -73,6 +72,8 @@ void WriteGmsh2Format (const Mesh & mesh,
                        const NetgenGeometry & geom,
                        const string & filename);
 
+void Cenos_WriteGmsh2Format(const Mesh& mesh,
+                        const string& filename);
 
 // Philippose - 25/10/2009
 // Added OpenFOAM 1.5+ Mesh Export support

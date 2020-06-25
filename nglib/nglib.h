@@ -253,6 +253,12 @@ DLL_HEADER void Cenos_GenerateBoundaryLayer(Ng_Mesh* mesh,
     double* heights_arr, int heights_count,
     size_t* new_matnrs_arr, int new_matnrs_count);
 
+DLL_HEADER Ng_Result Cenos_OCC_GetSoMap(Ng_OCC_Geometry* geom,
+    Ng_OCC_TopTools_IndexedMapOfShape* SoMap);
+
+DLL_HEADER int Cenos_GetSurfaceElementIndex(Ng_Mesh* mesh, int num);
+
+DLL_HEADER int Cenos_GetVolumeElementIndex(Ng_Mesh* mesh, int num);
 
 /*! \brief Load a Netgen VOL Mesh from disk into memory
 
