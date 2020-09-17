@@ -56,15 +56,35 @@ public:
   OCCSurface (const TopoDS_Face & aface, int aprojecttype)
   {
     static Timer t("occurface ctor"); RegionTimer r(t);
+	PrintMessage (2, "OCCSurface constructor, testline 1");
+	
     topods_face = aface;
+		PrintMessage (2, "OCCSurface constructor, testline 2");
+
     occface = BRep_Tool::Surface(topods_face);
+			PrintMessage (2, "OCCSurface constructor, testline 3");
+
     orient = topods_face.Orientation();
+		PrintMessage (2, "OCCSurface constructor, testline 4");
+
     projecttype = aprojecttype;
+		PrintMessage (2, "OCCSurface constructor, testline 5");
+
     ShapeAnalysis::GetFaceUVBounds (topods_face, umin, umax, vmin, vmax);
+		PrintMessage (2, "OCCSurface constructor, testline 6");
+
     umin -= fabs(umax-umin)/100.0;
+		PrintMessage (2, "OCCSurface constructor, testline 7");
+
     vmin -= fabs(vmax-vmin)/100.0;
+		PrintMessage (2, "OCCSurface constructor, testline 8");
+
     umax += fabs(umax-umin)/100.0;
+		PrintMessage (2, "OCCSurface constructor, testline 9");
+
     vmax += fabs(vmax-vmin)/100.0;
+		PrintMessage (2, "OCCSurface constructor, testline 10");
+
     // projecttype = PLANESPACE;
     /*
     TopExp_Explorer exp1;

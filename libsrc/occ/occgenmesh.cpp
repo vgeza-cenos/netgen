@@ -604,7 +604,8 @@ namespace netgen
                        const MeshingParameters & mparam)
   {
     static Timer t("OCCMeshSurface"); RegionTimer r(t);
-    
+    PrintMessage (2, "Start OCCMeshSurface");
+
     // int i, j, k;
     // int changed;
 
@@ -629,6 +630,7 @@ namespace netgen
 
     for (int k = 1; k <= mesh.GetNFD(); k++)
       {
+
         if(1==0 && !geom.fvispar[k-1].IsDrawable())
           {
             (*testout) << "ignoring face " << k << endl;
@@ -647,15 +649,23 @@ namespace netgen
         Box<3> bb = geom.GetBoundingBox();
 
         int projecttype = PLANESPACE;
-        
+   
         static Timer tinit("init");
+
         tinit.Start();
+		PrintMessage (2, "Init meshing");
+
         Meshing2OCCSurfaces meshing(geom, TopoDS::Face(geom.fmap(k)), bb, projecttype, mparam);
+
         tinit.Stop();
+
+		PrintMessage (2, "Continue meshing");
 
 
         static Timer tprint("print");
+
         tprint.Start();
+
         if (meshing.GetProjectionType() == PLANESPACE)
           PrintMessage (2, "Face ", k, " / ", mesh.GetNFD(), " (plane space projection)");
         else

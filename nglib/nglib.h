@@ -260,6 +260,12 @@ DLL_HEADER int Cenos_GetSurfaceElementIndex(Ng_Mesh* mesh, int num);
 
 DLL_HEADER int Cenos_GetVolumeElementIndex(Ng_Mesh* mesh, int num);
 
+DLL_HEADER void Cenos_RedirectCout(void* ptr_filestream);
+
+DLL_HEADER void Cenos_AddSurfaceElement(Ng_Mesh * mesh, Ng_Surface_Element_Type et, int * pi, int surfIndx);
+
+DLL_HEADER void Cenos_AddVolumeElement(Ng_Mesh * mesh, Ng_Volume_Element_Type et, int * pi, int volIndx);
+
 /*! \brief Load a Netgen VOL Mesh from disk into memory
 
     A Netgen mesh saved in the internal VOL format can be loaded 

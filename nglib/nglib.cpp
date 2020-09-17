@@ -687,9 +687,12 @@ namespace nglib
                                                     Ng_Mesh* mesh,
                                                     Ng_Meshing_Parameters * mp)
    {
+       (*mycout) << "Starting GenerateSurfaceMesh" << endl << flush;
+
       STLGeometry* stlgeometry = (STLGeometry*)geom;
       Mesh* me = (Mesh*)mesh;
       me->SetGeometry( shared_ptr<NetgenGeometry>(stlgeometry, &NOOP_Deleter) );
+      (*mycout) << "Geomtry is set" << endl;
 
       // Philippose - 27/07/2009
       // Do not locally re-define "mparam" here... "mparam" is a global 
@@ -697,6 +700,7 @@ namespace nglib
       //MeshingParameters mparam;
       mp->Transfer_Parameters();
 
+      (*mycout) << "Parameters are transferred" << endl << flush;
 
       /*
       me -> SetGlobalH (mparam.maxh);
@@ -715,22 +719,22 @@ namespace nglib
       int retval = STLSurfaceMeshing (*stlgeometry, *me, mparam, stlparam);
       if (retval == MESHING3_OK)
       {
-         (*mycout) << "Success !!!!" << endl;
+         (*mycout) << "Success !!!!" << endl << flush;
          stlgeometry->surfacemeshed = 1;
          stlgeometry->surfaceoptimized = 0;
          stlgeometry->volumemeshed = 0;
       } 
       else if (retval == MESHING3_OUTERSTEPSEXCEEDED)
       {
-         (*mycout) << "ERROR: Give up because of too many trials. Meshing aborted!" << endl;
+         (*mycout) << "ERROR: Give up because of too many trials. Meshing aborted!" << endl << flush;
       }
       else if (retval == MESHING3_TERMINATE)
       {
-         (*mycout) << "Meshing Stopped!" << endl;
+         (*mycout) << "Meshing Stopped!" << endl << flush;
       }
       else
       {
-         (*mycout) << "ERROR: Surface meshing not successful. Meshing aborted!" << endl;
+         (*mycout) << "ERROR: Surface meshing not successful. Meshing aborted!" << endl << flush;
       }
 
 
@@ -901,14 +905,17 @@ namespace nglib
                                                     Ng_Meshing_Parameters * mp)
    {
       int numpoints = 0;
+      (*mycout) << "Starting GenerateSurfaceMesh" << endl << flush;
 
       OCCGeometry * occgeom = (OCCGeometry*)geom;
       Mesh * me = (Mesh*)mesh;
       me->SetGeometry( shared_ptr<NetgenGeometry>(occgeom, &NOOP_Deleter) );
+      (*mycout) << "Geometry is set" << endl << flush;
 
       // Set the internal meshing parameters structure from the nglib meshing 
       // parameters structure
       mp->Transfer_Parameters();
+      (*mycout) << "Parameters are transferred" << endl << flush;
 
 
       // Only go into surface meshing if the face descriptors have already been added
@@ -925,8 +932,12 @@ namespace nglib
       {
          perfstepsend = MESHCONST_OPTSURFACE;
       }
+      (*mycout) << "Start mesh surface" << endl << flush;
 
       OCCMeshSurface(*occgeom, *me, mparam);
+      (*mycout) << "Done meshing surface" << endl << flush;
+      (*mycout) << "Optimizing surface" << endl << flush;
+
       OCCOptimizeSurface(*occgeom, *me, mparam);
 
       me->CalcSurfacesOfNode();
@@ -1318,6 +1329,50 @@ namespace nglib
         return ((Mesh*)mesh)->VolumeElement(num).GetIndex();
     }
 
+    DLL_HEADER void Cenos_RedirectCout(void* ptr_filestream)
+    {
+        mycout = (ofstream*)ptr_filestream;
+    }
+
+   // Manually add a surface element of a given type to an existing mesh object
+   DLL_HEADER void Cenos_AddSurfaceElement (Ng_Mesh * mesh, Ng_Surface_Element_Type et,
+                                         int * pi, int surfIndx)
+   {
+      Mesh * m = (Mesh*)mesh;
+	  Element2d el (3);
+      el.SetIndex (surfIndx);
+      el.PNum(1) = pi[0];
+      el.PNum(2) = pi[1];
+      el.PNum(3) = pi[2];
+      m->AddSurfaceElement (el);
+   }
+   
+   // Manually add a volume element of a given type to an existing mesh object
+   DLL_HEADER void Cenos_AddVolumeElement (Ng_Mesh * mesh, Ng_Volume_Element_Type et,
+                                        int * pi, int volIndx)
+   {
+      Mesh * m = (Mesh*)mesh;
+	  int nodeCount = 4;
+	  if (et == Ng_Volume_Element_Type::NG_PRISM)
+	  {
+		  nodeCount = 6;
+	  }
+
+	  Element el (nodeCount);
+      el.SetIndex (volIndx);
+      el.PNum(1) = pi[0];
+      el.PNum(2) = pi[1];
+      el.PNum(3) = pi[2];
+      el.PNum(4) = pi[3];
+	  if (et == Ng_Volume_Element_Type::NG_PRISM)
+	  {
+		el.PNum(5) = pi[5];
+		el.PNum(6) = pi[6];
+	  }
+		  
+      m->AddVolumeElement (el);
+   }
+   
 }
 
 
