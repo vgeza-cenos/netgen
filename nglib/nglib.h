@@ -255,6 +255,11 @@ DLL_HEADER void Cenos_GenerateBoundaryLayer(Ng_Mesh* mesh,
 
 DLL_HEADER Ng_Result Cenos_OCC_GetSoMap(Ng_OCC_Geometry* geom,
     Ng_OCC_TopTools_IndexedMapOfShape* SoMap);
+	
+DLL_HEADER Ng_Result Cenos_OCC_GetEdgeMap(Ng_OCC_Geometry* geom,
+    Ng_OCC_TopTools_IndexedMapOfShape* EdgeMap);
+
+DLL_HEADER int Cenos_GetEdgeElementIndex(Ng_Mesh* mesh, int num);
 
 DLL_HEADER int Cenos_GetSurfaceElementIndex(Ng_Mesh* mesh, int num);
 
@@ -262,9 +267,22 @@ DLL_HEADER int Cenos_GetVolumeElementIndex(Ng_Mesh* mesh, int num);
 
 DLL_HEADER void Cenos_RedirectCout(void* ptr_filestream);
 
+DLL_HEADER void Cenos_DumpSegments(Ng_Mesh* mesh, void* ptr_filestream);
+
+DLL_HEADER void Cenos_AddSegmentElement(Ng_Mesh * mesh, int pi1, int pi2, int edgeIndex, double* zeroNode);
+
+DLL_HEADER void Cenos_AddSurfaceElementUV(Ng_Mesh* mesh, Ng_Surface_Element_Type et,
+       int* pi, int surfIndx, double* uv1, double* uv2, double* uv3);
+	   
 DLL_HEADER void Cenos_AddSurfaceElement(Ng_Mesh * mesh, Ng_Surface_Element_Type et, int * pi, int surfIndx);
 
 DLL_HEADER void Cenos_AddVolumeElement(Ng_Mesh * mesh, Ng_Volume_Element_Type et, int * pi, int volIndx);
+
+DLL_HEADER Ng_Mesh * Cenos_NewMesh();
+
+DLL_HEADER void Cenos_AddFaceDescriptor (Ng_Mesh * mesh, int faceId, int dominId, int domOutId, int TLOface);
+
+DLL_HEADER void Cenos_AddEdgeDescriptor (Ng_Mesh * mesh, int edgeId);
 
 /*! \brief Load a Netgen VOL Mesh from disk into memory
 

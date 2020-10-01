@@ -29,12 +29,13 @@ namespace netgen
   extern MeshingParameters mparam;
 
    // Mapping of entities from Netgen definitions to GMSH definitions
-   enum GMSH_ELEMENTS {GMSH_TRIG = 2, GMSH_TRIG6 = 9,
-      GMSH_QUAD = 3, GMSH_QUAD8 = 16,
+   enum GMSH_ELEMENTS {GMSH_LINE = 1, GMSH_TRIG = 2, GMSH_TRIG6 = 9,
+      GMSH_QUAD = 3, GMSH_PRISM = 6, GMSH_QUAD8 = 16,
       GMSH_TET = 4, GMSH_TET10 = 11};
    const int triGmsh[7] = {0,1,2,3,6,4,5};
    const int quadGmsh[9] = {0,1,2,3,4,5,8,6,7};
    const int tetGmsh[11] = {0,1,2,3,4,5,8,6,7,10,9};
+   const int prismGmsh[6] = {0,1,2,3,4,5};
 
 
    /*! GMSH v2.xx mesh format export function
@@ -90,8 +91,9 @@ namespace netgen
          {
              int elType = 0;
              Element2d el = mesh.SurfaceElement(i);
-             if (el.GetNP() == 3) elType = GMSH_TRIG;	//// GMSH Type for a 3 node triangle
-             if (el.GetNP() == 6) elType = GMSH_TRIG6;  //// GMSH Type for a 6 node triangle
+             if (el.GetType() == ELEMENT_TYPE::TRIG) elType = GMSH_TRIG;	//// GMSH Type for a 3 node triangle
+             if (el.GetType() == ELEMENT_TYPE::QUAD) elType = GMSH_QUAD;	//// GMSH Type for a 6 node prism
+             if (el.GetType() == ELEMENT_TYPE::TRIG6) elType = GMSH_TRIG6;  //// GMSH Type for a 6 node triangle
              if (elType == 0)
              {
                  cout << " Invalid surface element type for Gmsh 2.0 3D-Mesh Export Format !\n";
@@ -111,8 +113,9 @@ namespace netgen
              Element el = mesh.VolumeElement(i);
              if (inverttets) el.Invert();
 
-             if (el.GetNP() == 4) elType = GMSH_TET;    //// GMSH Element type for 4 node tetrahedron
-             if (el.GetNP() == 10) elType = GMSH_TET10; //// GMSH Element type for 10 node tetrahedron
+             if (el.GetType() == ELEMENT_TYPE::TET) elType = GMSH_TET;    //// GMSH Element type for 4 node tetrahedron
+             if (el.GetType() == ELEMENT_TYPE::PRISM) elType = GMSH_PRISM;    //// GMSH Element type for 6 node prism
+             if (el.GetType() == ELEMENT_TYPE::TET10) elType = GMSH_TET10;    //// GMSH Element type for 10 node tetrahedron
              if (elType == 0)
              {
                  cout << " Invalid volume element type for Gmsh 2.0 3D-Mesh Export Format !\n";
@@ -123,26 +126,6 @@ namespace netgen
                  maxSolidIndex = elIndex;
          }
 
-/*
-         outfile << "$PhysicalNames\n";
-         outfile << maxSurfIndex + maxSolidIndex << "\n";
-         for (i = 1; i <= maxSurfIndex; i++)
-         {
-             if (faceMap.find(i) == faceMap.end() )
-                outfile << i << " \"_Face_" << i << "\"\n";
-             else
-                 outfile << i << " \"" << faceMap.at(i) << "\"\n";
-
-         }
-         for (i = 1; i <= maxSolidIndex; i++)
-         {
-             if (solidMap.find(i) == solidMap.end())
-                 outfile << i + maxSurfIndex << " \"_Solid_" << i << "\"\n";
-             else
-                 outfile << i + maxSurfIndex << " \"" << solidMap.at(i) << "\"\n";
-         }
-         outfile << "$EndPhysicalNames\n";
-         */
          /// Write nodes
          outfile << "$Nodes\n";
          outfile << np << "\n";
@@ -169,8 +152,9 @@ namespace netgen
             Element2d el = mesh.SurfaceElement(i);
             if(invertsurf) el.Invert();
 
-            if(el.GetNP() == 3) elType = GMSH_TRIG;	//// GMSH Type for a 3 node triangle
-            if(el.GetNP() == 6) elType = GMSH_TRIG6;  //// GMSH Type for a 6 node triangle
+             if (el.GetType() == ELEMENT_TYPE::TRIG) elType = GMSH_TRIG;	//// GMSH Type for a 3 node triangle
+             if (el.GetType() == ELEMENT_TYPE::QUAD) elType = GMSH_QUAD;	//// GMSH Type for a 6 node prism
+             if (el.GetType() == ELEMENT_TYPE::TRIG6) elType = GMSH_TRIG6;  //// GMSH Type for a 6 node triangle
             if(elType == 0)
             {
                cout << " Invalid surface element type for Gmsh 2.0 3D-Mesh Export Format !\n";
@@ -189,7 +173,14 @@ namespace netgen
             for (j = 1; j <= el.GetNP(); j++)
             {
                outfile << " ";
-               outfile << el.PNum(triGmsh[j]);
+               if((elType == GMSH_TRIG) || (elType == GMSH_TRIG6))
+               {
+                  outfile << el.PNum(triGmsh[l]);
+               }
+               else if((elType == GMSH_QUAD) || (elType == GMSH_QUAD8))
+               {
+                  outfile << el.PNum(quadGmsh[l]);
+               }
             }
             outfile << "\n";
          }
@@ -202,8 +193,9 @@ namespace netgen
             Element el = mesh.VolumeElement(i);
             if (inverttets) el.Invert();
 
-            if(el.GetNP() == 4) elType = GMSH_TET;    //// GMSH Element type for 4 node tetrahedron
-            if(el.GetNP() == 10) elType = GMSH_TET10; //// GMSH Element type for 10 node tetrahedron
+             if (el.GetType() == ELEMENT_TYPE::TET) elType = GMSH_TET;    //// GMSH Element type for 4 node tetrahedron
+             if (el.GetType() == ELEMENT_TYPE::PRISM) elType = GMSH_PRISM;    //// GMSH Element type for 4 node tetrahedron
+             if (el.GetType() == ELEMENT_TYPE::TET10) elType = GMSH_TET10;    //// GMSH Element type for 4 node tetrahedron
             if(elType == 0)
             {
                cout << " Invalid volume element type for Gmsh 2.0 3D-Mesh Export Format !\n";
@@ -224,7 +216,14 @@ namespace netgen
             for (j = 1; j <= el.GetNP(); j++)
             {
                outfile << " ";
-               outfile << el.PNum(tetGmsh[j]);
+               if((elType == GMSH_TET) || (elType == GMSH_TET10))
+               {
+                  outfile << el.PNum(tetGmsh[j]);
+               }
+               else if((elType == GMSH_PRISM))
+               {
+                  outfile << el.PNum(prismGmsh[j]);
+               }
             }
             outfile << "\n";
          }
