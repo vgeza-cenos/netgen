@@ -447,6 +447,8 @@ namespace netgen
   DLL_HEADER extern void OCCOptimizeSurface (OCCGeometry & geom, Mesh & mesh, const MeshingParameters & mparam);
 
   DLL_HEADER extern void OCCFindEdges (const OCCGeometry & geom, Mesh & mesh, const MeshingParameters & mparam);
+  
+  DLL_HEADER extern void DivideEdge (TopoDS_Edge & edge, NgArray<MeshPoint> & ps, NgArray<double> & params, Mesh & mesh, const MeshingParameters & mparam);
 }
 
 #endif
