@@ -114,21 +114,19 @@ namespace cnglib
    {
        Mesh* origin_mesh = (Mesh*)orig_mesh;
        Mesh* destination_mesh = (Mesh*)dest_mesh;
-       double eps = 1e-6 ; // TODO ESTABLISH CORRECT eps
 
        //Geometries
        const OCCGeometry& origin_geom = *dynamic_pointer_cast<OCCGeometry> (origin_mesh->GetGeometry());
        const OCCGeometry& destination_geom = *dynamic_pointer_cast<OCCGeometry> (destination_mesh->GetGeometry());
+       double eps = 1e-6 * destination_geom.GetBoundingBox().Diam();
 
        //if origin is edge
-       int edgeIndex = 0;
+       int edge_index = 0;
        int origin_mesh_dimension = 0;
 
        if (origin_geom.emap.Extent() == 1 && origin_geom.fmap.Extent() == 0 && origin_geom.somap.Extent() == 0)
        {
-           EdgeDescriptor  ed;
-           ed.SetTLOSurface(1);
-           edgeIndex = destination_mesh->AddEdgeDescriptor(ed) + 1;
+           edge_index = destination_geom.emap.FindIndex(origin_geom.emap.FindKey(1));
            origin_mesh_dimension = 1;
        }
        else if (origin_geom.fmap.Extent() == 1 && origin_geom.somap.Extent() == 0) // origin is face
@@ -149,8 +147,9 @@ namespace cnglib
        }
 
       // map to hold node ids.
-      // node 1 will correspond to node 10, if there are already 9 nodes in destination mesh
-       // node 3 will correspond to node 7, if they are equal (say, edge node)
+      // Example:
+	  // node 1 will correspond to node 10, if there are already 9 nodes in destination mesh
+      // node 3 will correspond to node 7, if they are equal (say, edge node)
       std::map<PointIndex, PointIndex> node_ids;
 
       int nNodes = origin_mesh->GetNP();
@@ -181,22 +180,22 @@ namespace cnglib
       int nVolEl = origin_mesh->GetNE();
 
       //edge elements
-      if (origin_mesh_dimension == 1)
+	  if (origin_mesh_dimension == 1)
       {
-          for (int i = 1; i <= nEdgeEl; i++)
-          {
-              Segment seg = origin_mesh->LineSegment(i);
+		  for (int i = 1; i <= nEdgeEl; i++)
+		  {
+			  Segment seg = origin_mesh->LineSegment(i);
 
-              seg[0] = node_ids[seg[0]];
-              seg[1] = node_ids[seg[1]];
-              seg.epgeominfo[0].edgenr = edgeIndex;
-              seg.epgeominfo[1].edgenr = edgeIndex;
-              seg.edgenr = destination_mesh->GetNSeg() + 1;
-              seg.cd2i = -1;
+			  seg[0] = node_ids[seg[0]];
+			  seg[1] = node_ids[seg[1]];
+			  seg.epgeominfo[0].edgenr = edge_index;
+			  seg.epgeominfo[1].edgenr = edge_index;
+			  seg.edgenr = destination_mesh->GetNSeg() + 1;
+			  seg.cd2i = -1;
 
-              destination_mesh->AddSegment(seg);
-          }
-      }
+			  destination_mesh->AddSegment(seg);
+		  }
+	  }
 
       //surface elements
       if (origin_mesh_dimension == 2)
@@ -250,7 +249,7 @@ namespace cnglib
                {
                    gp_Pnt2d p2d;
                    uvc++;
-                   p2d = cof->Value((*occ_mesh)[si].epgeominfo[0].dist);
+                   p2d = cof->Value((*occ_mesh)[si].epgeominfo[0].dist) ;
 
                    (*occ_mesh)[si].epgeominfo[0].u = p2d.X();
 
@@ -645,6 +644,7 @@ namespace cnglib
    {
       OCCGeometry * occgeom = (OCCGeometry*)geom;
       Mesh * me = (Mesh*)mesh;
+      me->SetGeometry( shared_ptr<NetgenGeometry>(occgeom, &NOOP_Deleter) );
       meshparams->Transfer_Parameters();
       double eps = 1e-6 * occgeom->GetBoundingBox().Diam();
 
@@ -702,7 +702,6 @@ namespace cnglib
 		  NgArray <double> params;
 
           DivideEdge(edge, mp, params, *me, mparam);
-          std::cout << params[0] << " " << params[1] << std::endl;
 
 
 		  NgArray<PointIndex> pnums(mp.Size()+2);
