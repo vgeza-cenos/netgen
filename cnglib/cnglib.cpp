@@ -116,12 +116,13 @@ namespace cnglib
        Mesh* destination_mesh = (Mesh*)dest_mesh;
 
        //Geometries
-       const OCCGeometry& origin_geom = *dynamic_pointer_cast<OCCGeometry> (origin_mesh->GetGeometry());
+       const OCCGeometry& origin_geom = *dynamic_pointer_cast<OCCGeometry>(origin_mesh->GetGeometry());
        const OCCGeometry& destination_geom = *dynamic_pointer_cast<OCCGeometry> (destination_mesh->GetGeometry());
        double eps = 1e-6 * destination_geom.GetBoundingBox().Diam();
-
+			
        //if origin is edge
        int edge_index = 0;
+       int solid_index = 0;
        int origin_mesh_dimension = 0;
 
        if (origin_geom.emap.Extent() == 1 && origin_geom.fmap.Extent() == 0 && origin_geom.somap.Extent() == 0)
@@ -136,6 +137,7 @@ namespace cnglib
        }
        else if (origin_geom.somap.Extent() == 1)
        {
+           solid_index = destination_geom.somap.FindIndex(origin_geom.somap.FindKey(1));
            origin_mesh_dimension = 3;
        }
        else // not supported
@@ -222,9 +224,113 @@ namespace cnglib
               el.PNum(2) = node_ids[el.PNum(2)];
               el.PNum(3) = node_ids[el.PNum(3)];
               el.PNum(4) = node_ids[el.PNum(4)];
+              el.SetIndex(solid_index);
               destination_mesh->AddVolumeElement(el);
           }
       }
+   }
+   
+   // Copy segments from origin_mesh into destination_mesh, assign edge index to segments
+   DLL_HEADER void CNg_CopySegments(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh, int edge_index)
+   {
+       Mesh* origin_mesh = (Mesh*)orig_mesh;
+       Mesh* destination_mesh = (Mesh*)dest_mesh;
+
+       //Geometries
+       const OCCGeometry& origin_geom = *dynamic_pointer_cast<OCCGeometry>(origin_mesh->GetGeometry());
+       const OCCGeometry& destination_geom = *dynamic_pointer_cast<OCCGeometry> (destination_mesh->GetGeometry());
+       double eps = 1e-6 * destination_geom.GetBoundingBox().Diam();
+			
+ 
+      // map to hold node ids.
+      // Example:
+	  // node 1 will correspond to node 10, if there are already 9 nodes in destination mesh
+      // node 3 will correspond to node 7, if they are equal (say, edge node)
+      std::map<PointIndex, PointIndex> node_ids;
+
+      int nNodes = origin_mesh->GetNP();
+      for (PointIndex opi: origin_mesh->Points().Range())
+      {
+          const Point3d& p = (*origin_mesh)[opi];
+          bool exists = false;
+          for (PointIndex dpi : destination_mesh->Points().Range())
+          {
+              if (Dist2((*destination_mesh)[dpi], p) < eps * eps)
+              {
+                  exists = true;
+                  node_ids[opi] = dpi;
+                  break;
+              }
+          }
+      }
+
+      int nEdgeEl = origin_mesh->GetNSeg();
+
+      //copy segments
+
+	  for (int i = 1; i <= nEdgeEl; i++)
+	  {
+		  Segment seg = origin_mesh->LineSegment(i);
+
+		  seg[0] = node_ids[seg[0]];
+		  seg[1] = node_ids[seg[1]];
+		  seg.epgeominfo[0].edgenr = edge_index;
+		  seg.epgeominfo[1].edgenr = edge_index;
+		  seg.edgenr = destination_mesh->GetNSeg() + 1;
+		  seg.cd2i = -1;
+
+		  destination_mesh->AddSegment(seg);
+	  }
+   }
+
+
+   // Copy surface elements from origin_mesh into destination_mesh, assign edge index to segments
+   DLL_HEADER void CNg_CopySurfaceElements(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh, int face_index)
+   {
+       Mesh* origin_mesh = (Mesh*)orig_mesh;
+       Mesh* destination_mesh = (Mesh*)dest_mesh;
+
+       //Geometries
+       const OCCGeometry& origin_geom = *dynamic_pointer_cast<OCCGeometry>(origin_mesh->GetGeometry());
+       const OCCGeometry& destination_geom = *dynamic_pointer_cast<OCCGeometry> (destination_mesh->GetGeometry());
+       double eps = 1e-6 * destination_geom.GetBoundingBox().Diam();
+
+
+       // map to hold node ids.
+       // Example:
+       // node 1 will correspond to node 10, if there are already 9 nodes in destination mesh
+       // node 3 will correspond to node 7, if they are equal (say, edge node)
+       std::map<PointIndex, PointIndex> node_ids;
+
+       int nNodes = origin_mesh->GetNP();
+       for (PointIndex opi : origin_mesh->Points().Range())
+       {
+           const Point3d& p = (*origin_mesh)[opi];
+           bool exists = false;
+           for (PointIndex dpi : destination_mesh->Points().Range())
+           {
+               if (Dist2((*destination_mesh)[dpi], p) < eps * eps)
+               {
+                   exists = true;
+                   node_ids[opi] = dpi;
+                   break;
+               }
+           }
+       }
+
+       int nFaceEl = origin_mesh->GetNSE();
+
+       // copy surface elements
+        for (int i = 1; i <= nFaceEl; i++)
+        {
+            //TODO check element type!!!
+            Element2d el = origin_mesh->SurfaceElement(i);
+            el.PNum(1) = node_ids[el.PNum(1)];
+            el.PNum(2) = node_ids[el.PNum(2)];
+            el.PNum(3) = node_ids[el.PNum(3)];
+            el.SetIndex(face_index);
+            destination_mesh->AddSurfaceElement(el);
+        }
    }
 
    // Prepare surface meshing
@@ -618,7 +724,7 @@ namespace cnglib
    {
       OCCGeometry * occgeom = (OCCGeometry*)geom;
       Mesh * me = (Mesh*)mesh;
-      me->SetGeometry( shared_ptr<NetgenGeometry>(occgeom, &NOOP_Deleter) );
+      me->SetGeometry( shared_ptr<OCCGeometry>(occgeom, &NOOP_Deleter) );
 
       me->geomtype = Mesh::GEOM_OCC;
 
@@ -644,7 +750,7 @@ namespace cnglib
    {
       OCCGeometry * occgeom = (OCCGeometry*)geom;
       Mesh * me = (Mesh*)mesh;
-      me->SetGeometry( shared_ptr<NetgenGeometry>(occgeom, &NOOP_Deleter) );
+      me->SetGeometry( shared_ptr<OCCGeometry>(occgeom, &NOOP_Deleter) );
       meshparams->Transfer_Parameters();
       double eps = 1e-6 * occgeom->GetBoundingBox().Diam();
 
@@ -781,7 +887,7 @@ namespace cnglib
    {
       OCCGeometry * occgeom = (OCCGeometry*)geom;
       Mesh * me = (Mesh*)mesh;
-      me->SetGeometry( shared_ptr<NetgenGeometry>(occgeom, &NOOP_Deleter) );
+      me->SetGeometry( shared_ptr<OCCGeometry>(occgeom, &NOOP_Deleter) );
 
       mp->Transfer_Parameters();
 
@@ -812,7 +918,7 @@ namespace cnglib
       if (!me->GetNFD())
           me->AddFaceDescriptor(FaceDescriptor(1, 1, 0, 0));
 
-      me->SetGeometry( shared_ptr<NetgenGeometry>(occgeom, &NOOP_Deleter) );
+      me->SetGeometry( shared_ptr<OCCGeometry>(occgeom, &NOOP_Deleter) );
       (*mycout) << "Geometry is set" << endl << flush;
 
       // Set the internal meshing parameters structure from the nglib meshing 

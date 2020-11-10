@@ -225,6 +225,12 @@ DLL_HEADER void CNg_DeleteMesh (CNg_Mesh * mesh);
 // Copy nodes and elements from origin_mesh into destination_mesh
 DLL_HEADER void CNg_MergeMesh(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh);
 
+// Copy segments from origin_mesh into destination_mesh, assign edge index to segments
+DLL_HEADER void CNg_CopySegments(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh, int edge_index);
+
+// Copy surface elements from origin_mesh into destination_mesh, assign edge index to segments
+DLL_HEADER void CNg_CopySurfaceElements(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh, int face_index);
+
 // Prepare surface meshing
 DLL_HEADER void CNg_PrepareSurfaceMeshing(CNg_Mesh* mesh);
 
