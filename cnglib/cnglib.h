@@ -223,7 +223,7 @@ DLL_HEADER void CNg_DeleteMesh (CNg_Mesh * mesh);
 
 
 // Copy nodes and elements from origin_mesh into destination_mesh
-DLL_HEADER void CNg_MergeMesh(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh);
+DLL_HEADER void CNg_MergeMesh(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh, int index = 0);
 
 // Copy segments from origin_mesh into destination_mesh, assign edge index to segments
 DLL_HEADER void CNg_CopySegments(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh, int edge_index);
@@ -307,7 +307,7 @@ DLL_HEADER void CNg_DumpSegments(CNg_Mesh* mesh, void* ptr_filestream);
 */
 DLL_HEADER void CNg_AddPoint(CNg_Mesh * mesh, double * x);
 
-DLL_HEADER void CNg_AddSegmentElement(CNg_Mesh * mesh, int pi1, int pi2, int edgeIndex, double* zeroNode);
+DLL_HEADER void CNg_AddSegmentElement(CNg_Mesh * mesh, int pi1, int pi2, int edgeIndex);
 
 
 /*! \brief Add a surface element to a given Netgen Mesh Structure
@@ -447,6 +447,8 @@ DLL_HEADER void CNg_RestrictMeshSizePoint (CNg_Mesh * mesh, double * p, double h
 */
 DLL_HEADER void CNg_RestrictMeshSizeBox (CNg_Mesh * mesh, double * pmin, double * pmax, double h);
 
+
+DLL_HEADER void CNg_RestrictMeshSizeMesh(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh);
 // ------------------------------------------------------------------
 
 
@@ -600,8 +602,10 @@ DLL_HEADER CNg_Result CNg_GenerateVolumeMesh (CNg_Mesh * mesh, CNg_Meshing_Param
 
 
 #ifdef OCCGEOMETRY
-DLL_HEADER void CNg_OCC_Uniform_Refinement (CNg_OCC_Geometry * geom,
-					   CNg_Mesh * mesh);
+DLL_HEADER void CNg_Refine(CNg_Mesh * mesh);
+
+DLL_HEADER void CNg_SetElementRefinement(CNg_Mesh* mesh, int el_index, bool b);
+
 #endif
 
 

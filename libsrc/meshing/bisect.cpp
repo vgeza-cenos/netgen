@@ -2838,7 +2838,6 @@ namespace netgen
 #endif
           
           PopStatus();
-          return;
       }
 
 
@@ -3141,7 +3140,7 @@ namespace netgen
 
 	    for (int i = 1; i <= mtets.Size(); i++)
 	      if (mtets.Elem(i).incorder)
-		mtets.Elem(i).marked = 0;
+		0;//mtets.Elem(i).marked = 0;
 
 
 	    for (int i = 1; i <= mprisms.Size(); i++)
@@ -3149,7 +3148,7 @@ namespace netgen
 
 	    for (int i = 1; i <= mprisms.Size(); i++)
 	      if (mprisms.Elem(i).incorder)
-		mprisms.Elem(i).marked = 0;
+		0;//mprisms.Elem(i).marked = 0;
 
 
 	    for (int i = 1; i <= mtris.Size(); i++)
@@ -3158,7 +3157,7 @@ namespace netgen
 	    for (int i = 1; i <= mtris.Size(); i++)
 	      {
 		if (mtris.Elem(i).incorder)
-		  mtris.Elem(i).marked = 0;
+		  0;//mtris.Elem(i).marked = 0;
 	      }
 	  }
 
@@ -3556,6 +3555,8 @@ namespace netgen
 		    nseg2[0] = newpi;
 		  
 		    EdgePointGeomInfo newepgi;
+			
+			newepgi.edgenr = seg.epgeominfo[0].edgenr;
 		  
 		    geo.PointBetweenEdge(mesh.Point (seg[0]), mesh.Point (seg[1]),
                                          0.5, seg.surfnr1, seg.surfnr2,

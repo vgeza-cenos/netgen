@@ -110,7 +110,7 @@ namespace cnglib
    }
 
    // Copy nodes and elements from origin_mesh into destination_mesh
-   DLL_HEADER void CNg_MergeMesh(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh)
+   DLL_HEADER void CNg_MergeMesh(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh, int index)
    {
        Mesh* origin_mesh = (Mesh*)orig_mesh;
        Mesh* destination_mesh = (Mesh*)dest_mesh;
@@ -127,17 +127,26 @@ namespace cnglib
 
        if (origin_geom.emap.Extent() == 1 && origin_geom.fmap.Extent() == 0 && origin_geom.somap.Extent() == 0)
        {
-           edge_index = destination_geom.emap.FindIndex(origin_geom.emap.FindKey(1));
+           if (index == 0)
+               edge_index = destination_geom.emap.FindIndex(origin_geom.emap.FindKey(1));
+           else
+               edge_index = index;
            origin_mesh_dimension = 1;
        }
        else if (origin_geom.fmap.Extent() == 1 && origin_geom.somap.Extent() == 0) // origin is face
        {
-           destination_mesh->AddFaceDescriptor(FaceDescriptor(destination_mesh->GetNFD() + 1, 1, 0, 1));
+           if (index == 0)
+               destination_mesh->AddFaceDescriptor(FaceDescriptor(destination_mesh->GetNFD() + 1, 1, 0, 1));
+           else
+               destination_mesh->AddFaceDescriptor(FaceDescriptor(index, 1, 0, 1));
            origin_mesh_dimension = 2;
        }
        else if (origin_geom.somap.Extent() == 1)
        {
-           solid_index = destination_geom.somap.FindIndex(origin_geom.somap.FindKey(1));
+           if (index == 0)
+               solid_index = destination_geom.somap.FindIndex(origin_geom.somap.FindKey(1));
+           else
+               solid_index = index;
            origin_mesh_dimension = 3;
        }
        else // not supported
@@ -145,7 +154,7 @@ namespace cnglib
            std::string message = "CNg_MergeMesh() does supports only single edge or single face or single solid as origin geometry. Passed Edges: " + std::to_string(origin_geom.emap.Extent())
                + ", Faces: " + std::to_string(origin_geom.fmap.Extent()) + ", Solids: " + std::to_string(origin_geom.somap.Extent()) + ".";
            std::cout << message << std::endl;
-           throw(std::exception(message.c_str()));
+           throw(message);
        }
 
       // map to hold node ids.
@@ -169,7 +178,6 @@ namespace cnglib
               }
           }
           
-
           if (!exists)
           {
               destination_mesh->AddPoint(p);
@@ -261,6 +269,12 @@ namespace cnglib
                   node_ids[opi] = dpi;
                   break;
               }
+          }
+
+          if (!exists)
+          {
+              destination_mesh->AddPoint(p);
+              node_ids[opi] = PointIndex(destination_mesh->GetNP());
           }
       }
 
@@ -420,7 +434,7 @@ namespace cnglib
 
 		  
 	// Manually add a segment element of a given type to an existing mesh object
-   DLL_HEADER void CNg_AddSegmentElement(Ng_Mesh * mesh, int pi1, int pi2, int edgeIndex, double* zeroNode)
+   DLL_HEADER void CNg_AddSegmentElement(Ng_Mesh * mesh, int pi1, int pi2, int edgeIndex)
    {
      Mesh * m = (Mesh*)mesh;
 	 const Point3d & p1 = m->Point(pi1);
@@ -430,12 +444,6 @@ namespace cnglib
      seg[0] = pi1;
      seg[1] = pi2;
 	    
-     seg.epgeominfo[0].dist = sqrt( pow(p1.X() - zeroNode[0],2) + 
-									pow(p1.Y() - zeroNode[1],2) +
-									pow(p1.Z() - zeroNode[2],2) );
-     seg.epgeominfo[1].dist = sqrt( pow(p2.X() - zeroNode[0],2) + 
-									pow(p2.Y() - zeroNode[1],2) +
-									pow(p2.Z() - zeroNode[2],2) );
      seg.epgeominfo[0].edgenr = edgeIndex;
      seg.epgeominfo[1].edgenr = edgeIndex;
 	 
@@ -662,6 +670,19 @@ namespace cnglib
                ((Mesh*)mesh) -> RestrictLocalH (Point3d (x, y, z), h);
    }
 
+   // Set a local limit on the maximum mesh size by copyin max size from origin mesh
+   DLL_HEADER void CNg_RestrictMeshSizeMesh(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh)
+   {
+       Mesh* origin_mesh = (Mesh*)orig_mesh;
+       Mesh* destination_mesh = (Mesh*)dest_mesh;
+
+       int nNodes = origin_mesh->GetNP();
+       for (PointIndex opi : origin_mesh->Points().Range())
+       {
+           const Point3d& p = (*origin_mesh)[opi];
+           destination_mesh->RestrictLocalH(p, origin_mesh->GetH(p));
+       }
+   }
 
 
 
@@ -942,12 +963,20 @@ namespace cnglib
          perfstepsend = MESHCONST_OPTSURFACE;
       }
       (*mycout) << "Start mesh surface" << endl << flush;
+      try 
+      {
+          OCCMeshSurface(*occgeom, *me, mparam);
 
-      OCCMeshSurface(*occgeom, *me, mparam);
+          OCCOptimizeSurface(*occgeom, *me, mparam);
+
+      }
+      catch (NgException)
+      {
+          std::cout << "CAUGHT NgException" << std::endl;
+      }
       (*mycout) << "Done meshing surface" << endl << flush;
       (*mycout) << "Optimizing surface" << endl << flush;
 
-      OCCOptimizeSurface(*occgeom, *me, mparam);
       (*mycout) << "Done optimizingsurface" << endl << flush;
 
       me->CalcSurfacesOfNode();
@@ -1161,24 +1190,59 @@ namespace cnglib
 
 
 
-   // ------------------ Begin - Uniform Mesh Refinement functions ---------------------
+   // ------------------ Begin - Mesh Refinement functions ---------------------
    
 
 
 #ifdef OCCGEOMETRY
 // copy of Ng_OCC_Uniform_Refinement
-   DLL_HEADER void CNg_Uniform_Refinement (CNg_OCC_Geometry * geom,
-      CNg_Mesh * mesh)
+   DLL_HEADER void CNg_Refine (CNg_Mesh * mesh)
    {
-      ( (OCCGeometry*)geom ) -> GetRefinement().Refine ( * (Mesh*) mesh );
-	  
+
+       /*Mesh* me = (Mesh*)mesh;
+       me->GetGeometry()->GetRefinement().Refine(*me);
+       me->UpdateTopology();*/
+
+
+       BisectionOptions biopt;
+       biopt.usemarkedelements = 1;
+       biopt.refine_p = 1;
+       biopt.refine_hp = 0;
+       Mesh* me = (Mesh*)mesh;
+
+       for (int i = 1; i <= me->GetNSE(); i++)
+           me->SurfaceElement(i).SetRefinementFlag(false);
+
+       //me->GetGeometry()->GetRefinement().Bisect(*me, biopt);
+       me->GetGeometry()->GetRefinement().Refine(*me);
+       me->UpdateTopology();
+       me->GetCurvedElements().SetIsHighOrder(false);
+
 	  /* other possible option - check if same result!
-	       Refinement ref(*((Mesh*)mesh)->GetGeometry());
-		   ref.Refine ( * (Mesh*) mesh );
+      * ( (OCCGeometry*)geom ) -> GetRefinement().Refine ( * (Mesh*) mesh );   
 	 */
    }
+   
+   // Set refinement flag for element
+   DLL_HEADER void CNg_SetElementRefinement (CNg_Mesh * mesh, int el_index, bool flag)
+   {
+       Mesh* me = (Mesh*)mesh;
+       if (me->GetDimension() == 3)
+       {
+           me->VolumeElement(el_index).SetRefinementFlag(flag);
+       }
+       else
+       {
+           me->SurfaceElement(el_index).SetRefinementFlag(flag);
+       }	 
+   }
+
+
+
+
+
 #endif
-   // ------------------ End - Uniform Mesh Refinement functions -----------------------
+   // ------------------ End - Mesh Refinement functions -----------------------
 } // End of namespace nglib
 
 
@@ -1218,7 +1282,8 @@ namespace cnglib
 	
     DLL_HEADER int CNg_GetSurfaceElementIndex(CNg_Mesh* mesh, int num)
     {
-        return ((Mesh*)mesh)->SurfaceElement(num).GetIndex();
+        int fd_id = ((Mesh*)mesh)->SurfaceElement(num).GetIndex();
+        return ((Mesh*)mesh)->GetFaceDescriptor(fd_id).SurfNr();
     }
     
 

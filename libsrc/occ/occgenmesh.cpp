@@ -634,7 +634,6 @@ namespace netgen
         if(1==0 && !geom.fvispar[k-1].IsDrawable())
           {
             (*testout) << "ignoring face " << k << endl;
-            cout << "ignoring face " << k << endl;
             continue;
           }
 
@@ -672,7 +671,7 @@ namespace netgen
           PrintMessage (2, "Face ", k, " / ", mesh.GetNFD(), " (parameter space projection)");
         tprint.Stop();
         if (surfmesherror)
-          cout << "Surface meshing error occurred before (in " << surfmesherror << " faces)" << endl;
+          (*testout) << "Surface meshing error occurred before (in " << surfmesherror << " faces)" << endl;
 
         //      Meshing2OCCSurfaces meshing(f2, bb);
         meshing.SetStartTime (starttime);
@@ -850,7 +849,7 @@ namespace netgen
 
                 mesh.Compress();
 
-                cout << "retry Surface " << k << endl;
+                (*testout) << "retry Surface " << k << endl;
 
                 k--;
                 projecttype*=-1;
@@ -885,12 +884,12 @@ namespace netgen
 
     if (surfmesherror)
       {
-        cout << "WARNING! NOT ALL FACES HAVE BEEN MESHED" << endl;
-        cout << "SURFACE MESHING ERROR OCCURRED IN " << surfmesherror << " FACES:" << endl;
+        (*testout) << "WARNING! NOT ALL FACES HAVE BEEN MESHED" << endl;
+        (*testout) << "SURFACE MESHING ERROR OCCURRED IN " << surfmesherror << " FACES:" << endl;
         for (int i = 1; i <= geom.fmap.Extent(); i++)
           if (geom.facemeshstatus[i-1] == -1)
             {
-              cout << "Face " << i << endl;
+              (*testout) << "Face " << i << endl;
               //               problemfile << "problem with face " << i << endl;
               //               problemfile << "vertices: " << endl;
               TopExp_Explorer exp0,exp1,exp2;
@@ -911,8 +910,8 @@ namespace netgen
               //               problemfile << endl;
 
             }
-        cout << endl << endl;
-        cout << "for more information open IGES/STEP Topology Explorer" << endl;
+        (*testout) << endl << endl;
+        (*testout) << "for more information open IGES/STEP Topology Explorer" << endl;
         //            problemfile.close();
         throw NgException ("Problem in Surface mesh generation");
       }
