@@ -700,9 +700,17 @@ namespace cnglib
 
       m->CalcLocalH(mparam.grading);
 
-      MeshVolume(mparam, *m);
-      RemoveIllegalElements(*m);
-      OptimizeVolume(mparam, *m);
+      try 
+      {
+          MeshVolume(mparam, *m);
+          RemoveIllegalElements(*m);
+          OptimizeVolume(mparam, *m);
+      }
+      catch (NgException e)
+      {
+          std::cout << "Netgen Exception: " << e.what() << std::endl;
+          return CNG_ERROR;
+      }
 
       return CNG_OK;
    }
@@ -970,9 +978,10 @@ namespace cnglib
           OCCOptimizeSurface(*occgeom, *me, mparam);
 
       }
-      catch (NgException)
+      catch (NgException e)
       {
-          std::cout << "CAUGHT NgException" << std::endl;
+          std::cout << "Netgen Exception: " << e.what() << std::endl;
+          return CNG_ERROR;
       }
       (*mycout) << "Done meshing surface" << endl << flush;
       (*mycout) << "Optimizing surface" << endl << flush;
@@ -1206,7 +1215,7 @@ namespace cnglib
 
        BisectionOptions biopt;
        biopt.usemarkedelements = 1;
-       biopt.refine_p = 1;
+       biopt.refine_p = 0;
        biopt.refine_hp = 0;
        Mesh* me = (Mesh*)mesh;
 
@@ -1236,9 +1245,6 @@ namespace cnglib
            me->SurfaceElement(el_index).SetRefinementFlag(flag);
        }	 
    }
-
-
-
 
 
 #endif

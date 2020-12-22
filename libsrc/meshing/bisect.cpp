@@ -2838,6 +2838,7 @@ namespace netgen
 #endif
           
           PopStatus();
+		  return;
       }
 
 
@@ -3140,7 +3141,7 @@ namespace netgen
 
 	    for (int i = 1; i <= mtets.Size(); i++)
 	      if (mtets.Elem(i).incorder)
-		0;//mtets.Elem(i).marked = 0;
+		mtets.Elem(i).marked = 0;
 
 
 	    for (int i = 1; i <= mprisms.Size(); i++)
@@ -3148,7 +3149,7 @@ namespace netgen
 
 	    for (int i = 1; i <= mprisms.Size(); i++)
 	      if (mprisms.Elem(i).incorder)
-		0;//mprisms.Elem(i).marked = 0;
+		mprisms.Elem(i).marked = 0;
 
 
 	    for (int i = 1; i <= mtris.Size(); i++)
@@ -3157,7 +3158,7 @@ namespace netgen
 	    for (int i = 1; i <= mtris.Size(); i++)
 	      {
 		if (mtris.Elem(i).incorder)
-		  0;//mtris.Elem(i).marked = 0;
+		  mtris.Elem(i).marked = 0;
 	      }
 	  }
 
