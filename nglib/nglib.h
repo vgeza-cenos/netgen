@@ -250,8 +250,7 @@ DLL_HEADER void Cenos_ExportMeshToGmesh2(Ng_Mesh* mesh, const char* filename);
 
 DLL_HEADER void Cenos_GenerateBoundaryLayer(Ng_Mesh* mesh,
     int* surfid_arr, int surfid_count,
-    double* heights_arr, int heights_count,
-    size_t* new_matnrs_arr, int new_matnrs_count);
+    double* heights_arr, int heights_count);
 
 DLL_HEADER Ng_Result Cenos_OCC_GetSoMap(Ng_OCC_Geometry* geom,
     Ng_OCC_TopTools_IndexedMapOfShape* SoMap);

@@ -60,12 +60,14 @@ typedef void * CNg_TopoDS_Shape;
 
 // *** Special Enum types used within Netgen ***********
 /// Currently implemented surface element types
+/// numbering according to gmsh format
 enum CNg_Surface_Element_Type 
-   { CNG_TRIG = 1, CNG_QUAD = 2, CNG_TRIG6 = 3, CNG_QUAD6 = 4, CNG_QUAD8 = 5 };
+   { CNG_TRIG = 2, CNG_QUAD = 3, CNG_TRIG6 = 9, CNG_QUAD8 = 16 };
 
 /// Currently implemented volume element types
+/// numbering according to gmsh format
 enum CNg_Volume_Element_Type 
-   { CNG_TET = 1, CNG_PYRAMID = 2, CNG_PRISM = 3, CNG_TET10 = 4 };
+   { CNG_TET = 4, CNG_HEXA = 5, CNG_PYRAMID = 7, CNG_PRISM = 6, CNG_TET10 = 11 };
 
 /// Values returned by Netgen functions
 enum CNg_Result 
@@ -517,7 +519,7 @@ DLL_HEADER int CNg_GetNE (CNg_Mesh * mesh);
 DLL_HEADER void CNg_GetPoint (CNg_Mesh * mesh, int num, double * x);
 
 
-DLL_HEADER void CNg_GetSegment(CNg_Mesh * mesh, int num, int * pi, int * matnum);
+DLL_HEADER int CNg_GetSegment(CNg_Mesh * mesh, int num, int * pi, int * matnum);
 
    
 // return surface and volume element in pi
@@ -592,6 +594,30 @@ DLL_HEADER CNg_Result CNg_GenerateSurfaceMesh (CNg_OCC_Geometry * geom,
 */
 DLL_HEADER CNg_Result CNg_GenerateVolumeMesh (CNg_Mesh * mesh, CNg_Meshing_Parameters * mp);
 
+
+/*! \brief Create a boundary layers for given volume mesh
+
+    After creating a volume mesh, this function can be utilised
+    to generate boundary layers on given surfaces.
+
+
+    \param mesh         Pointer to an existing Netgen Mesh structure of
+                        type #Ng_Mesh
+    \param surfid_arr   array of surface ids where layers will be created
+
+    \param surfid_count   number of faces in surfid_arr
+
+    \param heights_arr   array of layer heights
+
+    \param heights_count   number of layers
+
+    \return Ng_Result Status of the Mesh Generation routine. More
+                      details regarding the return value can be
+                      found in the description of #Ng_Result
+*/
+DLL_HEADER CNg_Result CNg_GenerateBoundaryLayer(CNg_Mesh* mesh,
+    int* surfid_arr, int surfid_count,
+    double* heights_arr, int heights_count);
 #endif // OCCGEOMETRY
 
 

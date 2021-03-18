@@ -574,7 +574,7 @@ namespace cnglib
    }
 
 
-   DLL_HEADER void CNg_GetSegment(Ng_Mesh * mesh, int num, int * pi, int * matnum)
+   DLL_HEADER int CNg_GetSegment(Ng_Mesh * mesh, int num, int * pi, int * matnum)
    {
       const Segment & seg = ((Mesh*)mesh)->LineSegment(num);
       pi[0] = seg[0];
@@ -582,7 +582,18 @@ namespace cnglib
 
       if (matnum)
          *matnum = seg.edgenr;
+      if (seg[2] == 0)
+      {
+          return 1;
+      }
+      else
+      {
+          pi[2] = seg[2];
+          return 8;
+      }
    }
+   
+   	
 
    // Return the surface element at a given index "pi"
    // copy of Ng_GetSurfaceElement
@@ -597,15 +608,7 @@ namespace cnglib
       {
       case 3: et = CNG_TRIG; break;
       case 4: et = CNG_QUAD; break;
-      case 6: 
-         switch (el.GetNV())
-         {
-         case 3: et = CNG_TRIG6; break;
-         case 4: et = CNG_QUAD6; break;
-         default:
-            et = CNG_TRIG6; break;
-         }
-         break;
+      case 6: et = CNG_TRIG6; break;
       case 8: et = CNG_QUAD8; break;
       default:
          et = CNG_TRIG; break; // for the compiler
@@ -715,7 +718,38 @@ namespace cnglib
       return CNG_OK;
    }
 
+   DLL_HEADER CNg_Result CNg_GenerateBoundaryLayer(CNg_Mesh* mesh,
+       int* surfid_arr, int surfid_count,
+       double* heights_arr, int heights_count)
+   {
+       Mesh* m = (Mesh*)mesh;
 
+       BoundaryLayerParameters blp;
+       for (int i = 0; i < surfid_count; i++) { blp.surfid.Append(surfid_arr[i]); }
+       for (int i = 0; i < heights_count; i++) { blp.heights.Append(heights_arr[i]); }
+       blp.new_mat = "BoundaryLayer";
+       blp.domains.SetSize(2);
+       blp.domains.Clear();
+       blp.domains.SetBit(1);
+       blp.outside = false;
+       blp.grow_edges = true;
+
+       try
+       {
+           GenerateBoundaryLayer(*m, blp);
+        //   RemoveIllegalElements(*m);
+           OptimizeVolume(mparam, *m);
+       }
+       catch (NgException e)
+       {
+           std::cout << "Netgen Exception: " << e.what() << std::endl;
+           return CNG_ERROR;
+       }
+
+       return CNG_OK;
+
+
+   }
 
 
 #ifdef OCCGEOMETRY
@@ -995,6 +1029,9 @@ namespace cnglib
       (*mycout) << numpoints << endl << flush;
       (*mycout) << me->GetNSE() << endl << flush;
 
+      if (mp->second_order)
+          me->GetGeometry()->GetRefinement().MakeSecondOrder(*me);
+
       if(me->GetNP() < numpoints)
          return CNG_ERROR;
 
@@ -1222,8 +1259,8 @@ namespace cnglib
        for (int i = 1; i <= me->GetNSE(); i++)
            me->SurfaceElement(i).SetRefinementFlag(false);
 
-       //me->GetGeometry()->GetRefinement().Bisect(*me, biopt);
-       me->GetGeometry()->GetRefinement().Refine(*me);
+       me->GetGeometry()->GetRefinement().Bisect(*me, biopt);
+       //me->GetGeometry()->GetRefinement().Refine(*me);
        me->UpdateTopology();
        me->GetCurvedElements().SetIsHighOrder(false);
 

@@ -1282,15 +1282,21 @@ namespace nglib
 
     DLL_HEADER void Cenos_GenerateBoundaryLayer(Ng_Mesh* mesh,
         int* surfid_arr, int surfid_count, 
-        double* heights_arr, int heights_count,
-        size_t* new_matnrs_arr, int new_matnrs_count
-        )
+        double* heights_arr, int heights_count)
     {
         BoundaryLayerParameters blp;
         for (int i = 0; i < surfid_count; i++) { blp.surfid.Append(surfid_arr[i]); }
         for (int i = 0; i < heights_count; i++) { blp.heights.Append(heights_arr[i]); }
-        for (int i = 0; i < new_matnrs_count; i++) { blp.new_matnrs.Append(new_matnrs_arr[i]); }
+		blp.new_mat = "BoundaryLayer";
+		blp.domains.SetSize(2);
+        blp.domains.Clear();
+        blp.domains.SetBit(1);
+		blp.outside = false;
+		blp.grow_edges = true;
+		std::cout << "Preparing BL done" << std::endl;
         netgen::GenerateBoundaryLayer(*(Mesh*)mesh, blp);
+		std::cout << "Meshing BL done" << std::endl;
+
     }
 
     DLL_HEADER Ng_OCC_Geometry* Cenos_OCC_ShapeToGeometry(Ng_TopoDS_Shape * s)
