@@ -9,7 +9,7 @@ else(WIN32)
   cmake_minimum_required(VERSION 3.8)
 endif(WIN32)
 
-option( USE_NATIVE_ARCH  "build for native cpu architecture" ON)
+option( USE_NATIVE_ARCH  "build for native cpu architecture" OFF)
 
 option( USE_GUI     "don't build netgen with GUI" ON )
 option( USE_PYTHON  "build with python interface" ON )
