@@ -3,11 +3,11 @@
 
 namespace netgen
 {
-int printmessage_importance = 10;
+int printmessage_importance = 3;
 int printwarnings = 1;
 int printerrors = 1;
 int printdots = 1;
-int printfnstart = 1;
+int printfnstart = 0;
 
 // extern void Ng_PrintDest(const MyStr& s);
 extern void Ng_PrintDest(const char * s);

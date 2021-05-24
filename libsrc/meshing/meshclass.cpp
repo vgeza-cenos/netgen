@@ -4034,10 +4034,10 @@ namespace netgen
                           (*testout) << "Intersecting: " << endl;
                           (*testout) << "openelement " << sei << " with open element " << sej << endl;
                       
-                      (*testout) << "el1 = " << tri << endl;
-                      (*testout) << "el2 = " << tri2 << endl;
-                      (*testout) << "layer1 = " <<  (*this)[tri[0]].GetLayer() << endl;
-                      (*testout) << "layer2 = " <<  (*this)[tri2[0]].GetLayer() << endl;
+                          cout << "el1 = " << tri << endl;
+                          cout << "el2 = " << tri2 << endl;
+                          cout << "layer1 = " <<  (*this)[tri[0]].GetLayer() << endl;
+                          cout << "layer2 = " <<  (*this)[tri2[0]].GetLayer() << endl;
                         }
                       
                       for (int k = 1; k <= 3; k++)

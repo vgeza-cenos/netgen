@@ -499,7 +499,7 @@ namespace netgen
     : Meshing2(geo, mparam, Box<3>(abb.PMin(), abb.PMax())),
       surface(TopoDS::Face(asurf), aprojecttype)
   {
-		PrintMessage (2, "Meshing2OCCSurfaces constructor");
+    ;
   }
 
 
