@@ -433,6 +433,9 @@ namespace netgen
   DLL_HEADER OCCGeometry * LoadOCC_STEP (const char * filename);
   DLL_HEADER OCCGeometry * LoadOCC_BREP (const char * filename);
 
+  typedef void Cenos_TopoDS_Shape;
+  DLL_HEADER OCCGeometry * CreateOCCGeometryFromTopoDS(Cenos_TopoDS_Shape * shape);
+
   // Philippose - 31.09.2009
   // External access to the mesh generation functions within the OCC
   // subsystem (Not sure if this is the best way to implement this....!!)
@@ -444,6 +447,8 @@ namespace netgen
   DLL_HEADER extern void OCCOptimizeSurface (OCCGeometry & geom, Mesh & mesh, const MeshingParameters & mparam);
 
   DLL_HEADER extern void OCCFindEdges (const OCCGeometry & geom, Mesh & mesh, const MeshingParameters & mparam);
+  
+  DLL_HEADER extern void DivideEdge (TopoDS_Edge & edge, NgArray<MeshPoint> & ps, NgArray<double> & params, Mesh & mesh, const MeshingParameters & mparam);
 }
 
 #endif

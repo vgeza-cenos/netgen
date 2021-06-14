@@ -4,7 +4,7 @@ add_library(interface ${NG_LIB_TYPE}
         read_fnf_mesh.cpp readtetmesh.cpp readuser.cpp writeabaqus.cpp writediffpack.cpp 
         writedolfin.cpp writeelmer.cpp writefeap.cpp writefluent.cpp writegmsh.cpp writejcm.cpp 
         writepermas.cpp writetecplot.cpp writetet.cpp writetochnog.cpp writeuser.cpp
-        wuchemnitz.cpp writegmsh2.cpp writeOpenFOAM15x.cpp rw_cgns.cpp
+        wuchemnitz.cpp writegmsh2.cpp writeOpenFOAM15x.cpp rw_cgns.cpp cenos_writegmsh2.cpp
         )
 
 target_link_libraries(interface PUBLIC mesh csg geom2d stl visual PRIVATE netgen_cgns)

@@ -62,6 +62,7 @@ typedef void * Ng_STL_Geometry;
 /// Data type for NETGEN OpenCascade geometry
 typedef void * Ng_OCC_Geometry;
 typedef void * Ng_OCC_TopTools_IndexedMapOfShape;
+typedef void * Ng_TopoDS_Shape;
 #endif
 
 

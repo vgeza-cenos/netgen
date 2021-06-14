@@ -129,6 +129,10 @@ bool WriteUserFormat (const string & format,
   else if (format == "Gmsh2 Format")
     WriteGmsh2Format (mesh, geom, filename);
 
+  else if (format == "Cenos Gmsh2 Format")
+    Cenos_WriteGmsh2Format (mesh, filename);
+
+
   // Philippose - 25/10/2009
   // Added OpenFOAM 1.5+ Mesh export capability
   else if (format == "OpenFOAM 1.5+ Format")

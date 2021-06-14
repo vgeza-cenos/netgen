@@ -1260,3 +1260,232 @@ void MyDummyToForceLinkingLibInterface(Mesh &mesh, NetgenGeometry &geom)
   netgen::WriteUserFormat("", mesh, /* geom, */ "");
 }
 
+namespace nglib
+{
+    DLL_HEADER void Cenos_ExportMeshToGmesh2(Ng_Mesh* mesh, const char* filename)
+    {
+        //Mesh* m = (Mesh*)mesh;
+        netgen::Cenos_WriteGmsh2Format(*(Mesh*)mesh, string(filename));
+        //netgen::WriteUserFormat(string("Cenos Gmsh2 Format"), *(Mesh*)mesh, /* geom, */ string(filename));
+    }
+
+    DLL_HEADER void Cenos_GenerateBoundaryLayer(Ng_Mesh* mesh,
+        int* surfid_arr, int surfid_count, 
+        double* heights_arr, int heights_count)
+    {
+        BoundaryLayerParameters blp;
+        for (int i = 0; i < surfid_count; i++) { blp.surfid.Append(surfid_arr[i]); }
+        for (int i = 0; i < heights_count; i++) { blp.heights.Append(heights_arr[i]); }
+		blp.new_mat = "BoundaryLayer";
+		blp.domains.SetSize(2);
+        blp.domains.Clear();
+        blp.domains.SetBit(1);
+		blp.outside = false;
+		blp.grow_edges = true;
+		std::cout << "Preparing BL done" << std::endl;
+        netgen::GenerateBoundaryLayer(*(Mesh*)mesh, blp);
+		std::cout << "Meshing BL done" << std::endl;
+
+    }
+
+    DLL_HEADER Ng_OCC_Geometry* Cenos_OCC_ShapeToGeometry(Ng_TopoDS_Shape * s)
+    {
+        OCCGeometry* geom = netgen::CreateOCCGeometryFromTopoDS((Cenos_TopoDS_Shape*)s);
+        return (Ng_OCC_Geometry*)geom;
+    }
+
+    DLL_HEADER Ng_Result Cenos_OCC_GetSoMap(Ng_OCC_Geometry* geom,
+        Ng_OCC_TopTools_IndexedMapOfShape* SoMap)
+    {
+        OCCGeometry* occgeom = (OCCGeometry*)geom;
+        TopTools_IndexedMapOfShape* occsomap = (TopTools_IndexedMapOfShape*)SoMap;
+
+        // Copy the face map from the geometry to the given variable
+        occsomap->Assign(occgeom->somap);
+
+        if (occsomap->Extent())
+        {
+            return NG_OK;
+        }
+        else
+        {
+            return NG_ERROR;
+        }
+    }
+	
+    DLL_HEADER Ng_Result Cenos_OCC_GetEdgeMap(Ng_OCC_Geometry* geom,
+        Ng_OCC_TopTools_IndexedMapOfShape* EdgeMap)
+    {
+        OCCGeometry* occgeom = (OCCGeometry*)geom;
+        TopTools_IndexedMapOfShape* occedgemap = (TopTools_IndexedMapOfShape*)EdgeMap;
+
+        // Copy the face map from the geometry to the given variable
+        occedgemap->Assign(occgeom->emap);
+
+        if (occedgemap->Extent())
+        {
+            return NG_OK;
+        }
+        else
+        {
+            return NG_ERROR;
+        }
+    }
+
+    DLL_HEADER int Cenos_GetEdgeElementIndex(Ng_Mesh* mesh, int num)
+    {
+//        if (((Mesh*)mesh)->GetDimension() == 3)
+//            return ((Mesh*)mesh)->LineSegment(num).edgenr;
+//        else
+            return ((Mesh*)mesh)->LineSegment(num).epgeominfo[0].edgenr;
+    }
+	
+    DLL_HEADER int Cenos_GetSurfaceElementIndex(Ng_Mesh* mesh, int num)
+    {
+        return ((Mesh*)mesh)->SurfaceElement(num).GetIndex();
+    }
+    
+
+    DLL_HEADER int Cenos_GetVolumeElementIndex(Ng_Mesh* mesh, int num)
+    {
+        return ((Mesh*)mesh)->VolumeElement(num).GetIndex();
+    }
+
+    DLL_HEADER void Cenos_RedirectCout(void* ptr_filestream)
+    {
+        mycout = (ofstream*)ptr_filestream;
+    }
+
+    DLL_HEADER void Cenos_DumpSegments(Ng_Mesh* mesh, void* ptr_filestream)
+    {
+        Mesh* m = (Mesh*)mesh;
+		ostream* file = (ofstream*)ptr_filestream;
+
+        (*file) << m->GetNCD2Names() << " " << m->GetNFD() << std::endl;
+		
+        m->CalcSurfacesOfNode();
+        (*file) << m->GetNOpenSegments() << " " << m->GetNOpenElements() << " " << m->CheckConsistentBoundary() << " " << m->CheckOverlappingBoundary() << std::endl;
+        int nrOfSeg = m->GetNSeg();
+        for (int i = 1; i <= nrOfSeg; i++)
+        {
+            Segment seg = m->LineSegment(i);
+            (*file) << seg[0] << " " << seg[1] << " " << seg.edgenr << " " << seg.singedge_left << " " << seg.singedge_right << " " << seg.geominfo[0].trignum << " " << seg.geominfo[0].u << " " << seg.geominfo[0].v << seg.geominfo[1].trignum << " " << seg.geominfo[1].u << " " << seg.geominfo[1].v << std::endl;
+			
+			
+        }
+    }
+
+
+
+		  
+	// Manually add a segment element of a given type to an existing mesh object
+   DLL_HEADER void Cenos_AddSegmentElement(Ng_Mesh * mesh, int pi1, int pi2, int edgeIndex, double* zeroNode)
+   {
+     Mesh * m = (Mesh*)mesh;
+	 const Point3d & p1 = m->Point(pi1);
+	 const Point3d & p2 = m->Point(pi2); 
+	 
+     Segment seg;
+     seg[0] = pi1;
+     seg[1] = pi2;
+	    
+     seg.epgeominfo[0].dist = sqrt( pow(p1.X() - zeroNode[0],2) + 
+									pow(p1.Y() - zeroNode[1],2) +
+									pow(p1.Z() - zeroNode[2],2) );
+     seg.epgeominfo[1].dist = sqrt( pow(p2.X() - zeroNode[0],2) + 
+									pow(p2.Y() - zeroNode[1],2) +
+									pow(p2.Z() - zeroNode[2],2) );
+     seg.epgeominfo[0].edgenr = edgeIndex;
+     seg.epgeominfo[1].edgenr = edgeIndex;
+	 
+ 
+	 seg.epgeominfo[0].u = p1.X();
+	 seg.epgeominfo[0].v = p1.Y();
+     seg.epgeominfo[1].u = p2.X();
+     seg.epgeominfo[1].v = p2.X();
+								
+     seg.si = 1;
+     seg.edgenr = m->GetNSeg() + 1;
+ 
+      m->AddSegment (seg);
+   }
+   
+   // Manually add a surface element of a given type to an existing mesh object
+   DLL_HEADER void Cenos_AddSurfaceElementUV(Ng_Mesh* mesh, Ng_Surface_Element_Type et,
+       int* pi, int surfIndx, double* uv1, double* uv2, double* uv3)
+   {
+       Mesh* m = (Mesh*)mesh;
+       Element2d el(3);
+       el.SetIndex(surfIndx);
+       el.PNum(1) = pi[0];
+       el.PNum(2) = pi[1];
+       el.PNum(3) = pi[2];
+       el.GeomInfoPi(1).u = uv1[0];
+       el.GeomInfoPi(1).v = uv1[1];
+       el.GeomInfoPi(2).u = uv2[0];
+       el.GeomInfoPi(2).v = uv2[1];
+       el.GeomInfoPi(3).u = uv3[0];
+       el.GeomInfoPi(3).v = uv3[1];
+       m->AddSurfaceElement(el);
+   }
+
+   // Manually add a surface element of a given type to an existing mesh object
+   DLL_HEADER void Cenos_AddSurfaceElement (Ng_Mesh * mesh, Ng_Surface_Element_Type et,
+                                         int * pi, int surfIndx)
+   {
+      Mesh * m = (Mesh*)mesh;
+	  Element2d el (3);
+      el.SetIndex (surfIndx);
+      el.PNum(1) = pi[0];
+      el.PNum(2) = pi[1];
+      el.PNum(3) = pi[2];
+      m->AddSurfaceElement (el);
+   }
+   
+   // Manually add a volume element of a given type to an existing mesh object
+   DLL_HEADER void Cenos_AddVolumeElement (Ng_Mesh * mesh, Ng_Volume_Element_Type et,
+                                        int * pi, int volIndx)
+   {
+      Mesh * m = (Mesh*)mesh;
+	  int nodeCount = 4;
+	  if (et == Ng_Volume_Element_Type::NG_PRISM)
+	  {
+		  nodeCount = 6;
+	  }
+
+	  Element el (nodeCount);
+      el.SetIndex (volIndx);
+      el.PNum(1) = pi[0];
+      el.PNum(2) = pi[1];
+      el.PNum(3) = pi[2];
+      el.PNum(4) = pi[3];
+	  if (et == Ng_Volume_Element_Type::NG_PRISM)
+	  {
+		el.PNum(5) = pi[4];
+		el.PNum(6) = pi[5];
+	  }
+		  
+      m->AddVolumeElement (el);
+   }
+   
+   DLL_HEADER Ng_Mesh * Cenos_NewMesh ()
+   {
+      Mesh * mesh = new Mesh;  
+      return (Ng_Mesh*)(void*)mesh;
+   }
+   
+   DLL_HEADER void Cenos_AddFaceDescriptor (Ng_Mesh* mesh, int faceId, int dominId, int domOutId, int TLOface)
+   {
+      Mesh* m = (Mesh*)mesh;
+      m->AddFaceDescriptor (FaceDescriptor (faceId, dominId, domOutId, TLOface));
+   }
+   
+   
+   DLL_HEADER void Cenos_AddEdgeDescriptor (Ng_Mesh* mesh, int edgeId)
+   {
+      Mesh* m = (Mesh*)mesh;
+	  EdgeDescriptor  ed;
+	  ed.SetTLOSurface(edgeId);
+      m->AddEdgeDescriptor (ed);
+   }
+}

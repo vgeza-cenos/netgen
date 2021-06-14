@@ -1677,6 +1677,23 @@ namespace netgen
 
       return occgeo;
    }
+   
+      OCCGeometry* CreateOCCGeometryFromTopoDS(Cenos_TopoDS_Shape* shape)
+   {
+       OCCGeometry* occgeo;
+       occgeo = new OCCGeometry;
+       BRep_Builder builder;
+       TopoDS_Shape* s = (TopoDS_Shape*)shape;
+       occgeo->shape = *s;
+       occgeo->face_colours = Handle_XCAFDoc_ColorTool();
+       occgeo->face_colours.Nullify();
+       occgeo->changed = 1;
+       occgeo->BuildFMap();
+       occgeo->CalcBoundingBox();
+       //PrintContents(occgeo);
+       return occgeo;
+   }
+
 
 
   void OCCGeometry :: Save (string sfilename) const
