@@ -1,0 +1,16 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[submodule "external_dependencies/pybind11"]
+	active = true
+	url = https://github.com/ngsolve/pybind11.git
+[remote "NTGEN-origin"]
+	url = https://github.com/vgeza-cenos/netgen
+	fetch = +refs/heads/*:refs/remotes/NTGEN-origin/*
+[branch "netgen-6.2.2"]
+	remote = NTGEN-origin
+	merge = refs/heads/netgen-6.2.2
