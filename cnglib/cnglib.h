@@ -50,6 +50,8 @@
 /// Data type for NETGEN mesh
 typedef void * CNg_Mesh;
 
+typedef void * CNg_LocalH;
+
 #ifdef OCCGEOMETRY
 /// Data type for NETGEN OpenCascade geometry
 typedef void * CNg_OCC_Geometry;
@@ -259,7 +261,15 @@ DLL_HEADER void CNg_ReverseFaces(CNg_Mesh* mesh);
 */
 DLL_HEADER void CNg_SaveMesh(CNg_Mesh * mesh, const char* filename);
 
+DLL_HEADER CNg_LocalH CNg_GetLocalH(CNg_Mesh* mesh);
+
+DLL_HEADER void CNg_CopyLocalH(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh);
+
+DLL_HEADER double CNg_GetMaxH(CNg_Mesh* occ_mesh);
+
 DLL_HEADER void CNg_ExportMeshToGmesh2(CNg_Mesh* mesh, const char* filename);
+
+DLL_HEADER void CNg_ExportMeshToOpenFOAM(CNg_Mesh* mesh, const char* filename);
 
 
 DLL_HEADER CNg_Result CNg_GetSolidMap(CNg_OCC_Geometry* geom,
@@ -451,6 +461,8 @@ DLL_HEADER void CNg_RestrictMeshSizeBox (CNg_Mesh * mesh, double * pmin, double 
 
 
 DLL_HEADER void CNg_RestrictMeshSizeMesh(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh);
+
+DLL_HEADER void CNg_RestrictMeshSizeLocalH(CNg_Mesh* mesh, CNg_LocalH* localh);
 // ------------------------------------------------------------------
 
 
@@ -553,6 +565,9 @@ DLL_HEADER CNg_Result CNg_SetLocalMeshSize (CNg_OCC_Geometry * geom,
                                               CNg_Mesh * mesh,
                                               CNg_Meshing_Parameters * mp);
 
+// Set the mesh geometry / topology
+DLL_HEADER void CNg_SetGeometry(CNg_OCC_Geometry* geom, CNg_Mesh* mesh);
+
 
 // Mesh Edges only
 DLL_HEADER CNg_Result CNg_DivideEdges(CNg_OCC_Geometry * geom,
@@ -618,6 +633,10 @@ DLL_HEADER CNg_Result CNg_GenerateVolumeMesh (CNg_Mesh * mesh, CNg_Meshing_Param
 DLL_HEADER CNg_Result CNg_GenerateBoundaryLayer(CNg_Mesh* mesh,
     int* surfid_arr, int surfid_count,
     double* heights_arr, int heights_count);
+
+
+DLL_HEADER CNg_Result CNg_GenerateBoundaryLayer2(CNg_Mesh* mesh,
+    int dom_nr, double* heights_arr, int heights_count);
 #endif // OCCGEOMETRY
 
 

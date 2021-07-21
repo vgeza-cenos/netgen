@@ -217,6 +217,9 @@ namespace cnglib
               el.PNum(1) = node_ids[el.PNum(1)];
               el.PNum(2) = node_ids[el.PNum(2)];
               el.PNum(3) = node_ids[el.PNum(3)];
+              if (el.GetType() == QUAD)
+                  el.PNum(4) = node_ids[el.PNum(4)];
+
               el.SetIndex(destination_mesh->GetNFD());
               destination_mesh->AddSurfaceElement(el);
           }
@@ -228,10 +231,8 @@ namespace cnglib
           for (int i = 1; i <= nVolEl; i++)
           {
               Element el = origin_mesh->VolumeElement(i);
-              el.PNum(1) = node_ids[el.PNum(1)];
-              el.PNum(2) = node_ids[el.PNum(2)];
-              el.PNum(3) = node_ids[el.PNum(3)];
-              el.PNum(4) = node_ids[el.PNum(4)];
+              for (int n = 1; n <= el.GetNP(); n++)
+                el.PNum(n) = node_ids[el.PNum(n)];
               el.SetIndex(solid_index);
               destination_mesh->AddVolumeElement(el);
           }
@@ -342,6 +343,8 @@ namespace cnglib
             el.PNum(1) = node_ids[el.PNum(1)];
             el.PNum(2) = node_ids[el.PNum(2)];
             el.PNum(3) = node_ids[el.PNum(3)];
+            if (el.GetType() == QUAD)
+                el.PNum(4) = node_ids[el.PNum(4)];
             el.SetIndex(face_index);
             destination_mesh->AddSurfaceElement(el);
         }
@@ -422,6 +425,35 @@ namespace cnglib
       ((Mesh*)mesh)->Save(filename);
    }
 
+   DLL_HEADER CNg_LocalH CNg_GetLocalH(CNg_Mesh * mesh)
+   {
+       ((Mesh*)mesh)->CalcLocalHFromPointDistances(0.4);
+       return (CNg_LocalH)((Mesh*)mesh)->GetLocalH().get();
+   }
+
+   DLL_HEADER void CNg_CopyLocalH(CNg_Mesh* orig_mesh, CNg_Mesh* dest_mesh)
+   {
+       Mesh* origin_mesh = (Mesh*)orig_mesh;
+       Mesh* destination_mesh = (Mesh*)dest_mesh;
+       destination_mesh->SetLocalH(origin_mesh->GetLocalH());
+   }
+
+   DLL_HEADER double CNg_GetMaxH(CNg_Mesh* occ_mesh)
+   {
+       Mesh* mesh = (Mesh*)occ_mesh;
+       mesh->CalcLocalHFromPointDistances(0.4);
+
+       double max_h = 0;
+       for (PointIndex opi : mesh->Points().Range())
+       {
+           const Point3d& p = (*mesh)[opi];
+           double point_h = mesh->GetH(p);
+           if (point_h > max_h)
+               max_h = point_h;
+       }
+       return max_h;
+   }
+   
 
    // Manually add a point to an existing mesh object
    //copy of Ng_AddPoint
@@ -464,11 +496,21 @@ namespace cnglib
        int* pi, int surfIndx, double* uv1, double* uv2, double* uv3)
    {
        Mesh* m = (Mesh*)mesh;
-       Element2d el(3);
+       Element2d el;
+       if (et == CNG_TRIG)
+           el = Element2d(3);
+       else if (et == CNG_QUAD)
+           el = Element2d(4);
+
        el.SetIndex(surfIndx);
        el.PNum(1) = pi[0];
        el.PNum(2) = pi[1];
        el.PNum(3) = pi[2];
+
+       //add fourth node if it is quad
+       if (et == CNG_QUAD)
+           el.PNum(4) = pi[3];
+
        el.GeomInfoPi(1).u = uv1[0];
        el.GeomInfoPi(1).v = uv1[1];
        el.GeomInfoPi(2).u = uv2[0];
@@ -483,13 +525,23 @@ namespace cnglib
    DLL_HEADER void CNg_AddSurfaceElement (CNg_Mesh * mesh, CNg_Surface_Element_Type et,
                                          int * pi, int surfIndx)
    {
-      Mesh * m = (Mesh*)mesh;
-	  Element2d el (3);
-      el.SetIndex (surfIndx);
-      el.PNum(1) = pi[0];
-      el.PNum(2) = pi[1];
-      el.PNum(3) = pi[2];
-      m->AddSurfaceElement (el);
+       Mesh* m = (Mesh*)mesh;
+       Element2d el(3);
+       if (et == CNG_TRIG)
+           el = Element2d(3);
+       else if (et == CNG_QUAD)
+           el = Element2d(4);
+
+       el.SetIndex(surfIndx);
+       el.PNum(1) = pi[0];
+       el.PNum(2) = pi[1];
+       el.PNum(3) = pi[2];
+
+       //add fourth node if it is quad
+       if (et == CNG_QUAD)
+           el.PNum(4) = pi[3];
+
+       m->AddSurfaceElement(el);
    }
    
    // Manually add a volume element of a given type to an existing mesh object
@@ -521,12 +573,6 @@ namespace cnglib
    }
    
   
-
-
-
-
-
-
    // Obtain the number of points in the mesh
    // copy of Ng_GetNP
    DLL_HEADER int CNg_GetNP (CNg_Mesh * mesh)
@@ -661,8 +707,6 @@ namespace cnglib
    }
 
 
-
-
    // Set a local limit on the maximum mesh size allowed within a given box region
    // copy of Ng_RestrictMeshSizeBox
    DLL_HEADER void CNg_RestrictMeshSizeBox (CNg_Mesh * mesh, double * pmin, double * pmax, double h)
@@ -684,6 +728,17 @@ namespace cnglib
        {
            const Point3d& p = (*origin_mesh)[opi];
            destination_mesh->RestrictLocalH(p, origin_mesh->GetH(p));
+       }
+   }
+
+   // Set a local limit on the maximum mesh size by copyin max size from origin mesh
+   DLL_HEADER void CNg_RestrictMeshSizeLocalH(CNg_Mesh* occ_mesh, CNg_LocalH* localh)
+   {
+       Mesh* mesh = (Mesh*)occ_mesh;
+       for (PointIndex opi : mesh->Points().Range())
+       {
+           const Point3d& p = (*mesh)[opi];
+           mesh->RestrictLocalH(p, ((LocalH*)localh)->GetH(p));
        }
    }
 
@@ -747,8 +802,30 @@ namespace cnglib
        }
 
        return CNG_OK;
+   }
 
+   DLL_HEADER CNg_Result CNg_GenerateBoundaryLayer2(CNg_Mesh* mesh,
+       int dom_nr, double* heights_arr, int heights_count)
+   {
+       Mesh* m = (Mesh*)mesh;
 
+       Array<double> thicknesses;
+       for (int i = 0; i < heights_count; i++)
+       {
+           thicknesses.Append(heights_arr[i]);
+       }
+
+       try
+       {
+           GenerateBoundaryLayer2(*m, dom_nr, thicknesses, false);
+       }
+       catch (NgException e)
+       {
+           std::cout << "Netgen Exception: " << e.what() << std::endl;
+           return CNG_ERROR;
+       }
+
+       return CNG_OK;
    }
 
 
@@ -805,6 +882,14 @@ namespace cnglib
       return(CNG_OK);
    }
 
+
+   // Set the geometry / topology of mesh
+   DLL_HEADER void CNg_SetGeometry(CNg_OCC_Geometry* geom, CNg_Mesh* mesh)
+   {
+       OCCGeometry* occgeom = (OCCGeometry*)geom;
+       Mesh* me = (Mesh*)mesh;
+       me->SetGeometry(shared_ptr<OCCGeometry>(occgeom, &NOOP_Deleter));
+   }
 
    // Mesh single edgeId
    DLL_HEADER CNg_Result CNg_DivideEdges(CNg_OCC_Geometry * geom,
@@ -988,7 +1073,6 @@ namespace cnglib
       // parameters structure
       mp->Transfer_Parameters();
       (*mycout) << "Parameters are transferred" << endl << flush;
-
 
       // Only go into surface meshing if the face descriptors have already been added
       if(!me->GetNFD())
@@ -1228,6 +1312,7 @@ namespace cnglib
 
       mparam.checkoverlap = check_overlap;
       mparam.checkoverlappingboundary = check_overlapping_boundary;
+
    }
    // ------------------ End - Meshing Parameters related functions --------------------
 
@@ -1301,11 +1386,16 @@ void MyDummyToForceLinkingLibInterface(Mesh &mesh, NetgenGeometry &geom)
 
 namespace cnglib
 {
-    DLL_HEADER void CNg_ExportMeshToGmesh2(Ng_Mesh* mesh, const char* filename)
+    DLL_HEADER void CNg_ExportMeshToGmesh2(CNg_Mesh* mesh, const char* filename)
     {
         //Mesh* m = (Mesh*)mesh;
         netgen::Cenos_WriteGmsh2Format(*(Mesh*)mesh, string(filename));
-        //netgen::WriteUserFormat(string("Cenos Gmsh2 Format"), *(Mesh*)mesh, /* geom, */ string(filename));
+    }
+
+    DLL_HEADER void CNg_ExportMeshToOpenFOAM(CNg_Mesh* mesh, const char* filename)
+    {
+        //Mesh* m = (Mesh*)mesh;
+        netgen::Cenos_WriteOpenFOAM15xFormat(*(Mesh*)mesh, string(filename), false);
     }
 
     DLL_HEADER CNg_OCC_Geometry* CNg_OCC_ShapeToGeometry(CNg_TopoDS_Shape * s)
